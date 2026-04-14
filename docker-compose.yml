@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: conector-gup-chatwoot-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_URL=postgresql://conector:senhaforte123@db:5432/conector_db?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma db push && npm start"
+
+  db:
+    image: postgres:15-alpine
+    container_name: conector-gup-chatwoot-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: conector
+      POSTGRES_PASSWORD: senhaforte123
+      POSTGRES_DB: conector_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conector -d conector_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
